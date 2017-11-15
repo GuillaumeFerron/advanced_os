@@ -100,9 +100,9 @@ void do_sys_gettime() {
 	uint32_t date_msb = date_ms >> 32;
 	uint32_t date_lsb = date_ms;
 	
-	//Backing up each two parts of the 64 bit long in the registers. We chose r0 and r1
-	__asm("mov r0, %0" : : "r"(date_msb) : "r0");
-	__asm("mov r1, %0" : : "r"(date_lsb) : "r1", "r0");
+	//Backing up each two parts of the 64 bit long in the registers. We chose r0 and r1 of the USER stack
+	*(regs) = date_msb;
+	*(regs+1) = date_lsb;
 }
 
 
