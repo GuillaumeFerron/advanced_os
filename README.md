@@ -1,5 +1,70 @@
 # README
+
+## Table of Contents
+
 [[TOC]]
+
+## Chapter 2
+
+### 2.3
+
+Dividend : r0
+
+Divisor : r1
+
+Result : r3
+
+Remainder : r3
+
+### 2.4
+
+Before kmain returns : sp ← 0x95f8
+
+*mov r3, #5*		→ stocke 5 in r3
+
+*str r3, [sp, #4]		*→ stocke r3 au 4e octet à partir de sp
+
+sp cell values : 	sp[0] : 0x20b
+
+			sp[1] : 0x5
+
+			sp[2] : 0x0
+
+			sp[3] : 0x5098
+
+in hexa *print/x *((int *) $sp)*					in decimal *print/d *((int *) $sp)*
+
+radius and volume are stored in r3 (0x95e0)
+
+Increasing address : at the beginning only 0x9500 used, at the end 0x95e0, 0x95f0 and 0x9600 used
+
+sp points at the last full place
+
+bl is a function call, and after the branch (b), the return address is pushed in lr
+
+### 2.8
+
+With b instruction, the return address isn’t loaded in lr, then pc isn’t loaded with the next instruction, hence it doesn’t know what to execute next.
+
+Fix : bl instead of b
+
+### 2.9
+
+__asm("mov r2, %0" : : “r”(radius));
+
+__asm("mov %0, r3" : : “=r”(radius));
+
+### 2.10
+
+The register lr isn’t allocated to the dummy method
+
+90c4 : e12ffff1e 	bx	lr	is not done when attribute naked is specified as it doesn’t do a prologue or epilogue in the compiler.
+
+### 2.12
+
+In the tests, the prints are checked such that are indeed &xxxxx
+
+### Code :
 
 *void dummy(){*
 
@@ -33,8 +98,6 @@
 
 *}*
 
-## Chapter 3
-
 *int kmain() {*
 
 *int radius = 5;*
@@ -52,6 +115,34 @@
 *  return volume;*
 
 *}*
+
+## Chapter 3
+
+### 3.1
+
+At the beginning of kmain, print/t $cpsr = 11111	→ system
+
+### 3.2
+
+__asm("cps #19")	$cpsr → [...]10011 and $sp → change from 0x95fc to 0x940c
+
+### 3.3
+
+$lr = 32920 before, 0 after
+
+At first lr points to return value of kmain then points to start
+
+### 3.4
+
+User mode → SVC not allowed, cpsr stays at user mode
+
+### 3.5
+
+__asm("msr r0, spsr"); if system mode, null since no spsr system.
+
+### 3.6
+
+Prints the execution mode
 
 ## Chapter 4
 
@@ -360,4 +451,5 @@ We decompose it, and recompose it in the do_sys_settime
 *    __asm("SWI 0");*
 
 *}*
+
 
