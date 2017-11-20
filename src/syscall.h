@@ -3,6 +3,9 @@
 #include <stdint.h>
 #include <inttypes.h>
 
+//Back up of registers
+uint32_t* regs;
+
 /*************** Functions declaration *****************/
 
 void __attribute__((naked)) swi_handler(void);

@@ -3,15 +3,13 @@
 #include <stdint.h>
 #include <inttypes.h>
 #include "./hw.h"
+#include "./sched.h"
 
 //System call modes
 int SYSCALL_REBOOT_NUMBER = 1;
 int SYSCALL_NOP_NUMBER = 2;
 int SYSCALL_SETTIME_NUMBER = 3;
 int SYSCALL_GETTIME_NUMBER = 4;
-
-//Back up of registers
-uint32_t* regs;
 
 
 /*************** REBOOT ***************/
@@ -81,7 +79,7 @@ uint64_t sys_gettime() {
 	__asm("SWI 0");
 	
 	//Get the value of time in the registers r0 and r1
-	__asm("mov %0, r0" : "=r"(date_msb) : : "r0");
+	__asm("mov %0, r0" : "=r"(date_msb) : : "r0", "r1");
 	__asm("mov %0, r1" : "=r"(date_lsb) : : "r0", "r1");
 
 	//Recompose the full date
@@ -126,6 +124,9 @@ void __attribute__((naked)) swi_handler(void) {
 	}
 	else if(*regs == 4) {
 		do_sys_gettime();
+	}
+	else if(*regs == 5) {
+		do_sys_yieldto();	
 	}
 	else {
 		PANIC();		
