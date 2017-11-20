@@ -2,8 +2,6 @@
 
 ## Table of Contents
 
-[[TOC]]
-
 ## Chapter 2
 
 ### 2.3
@@ -451,5 +449,89 @@ We decompose it, and recompose it in the do_sys_settime
 *    __asm("SWI 0");*
 
 *}*
+
+## Chapter 5
+
+### 5.1
+
+In sched.c
+
+*#include "./sched.h"*
+
+*//System call modes*
+
+*int SYSCALL_SCHED_NUMBER = 5;*
+
+*/*************** SCHED ***************/*
+
+*void sys_yieldto(struct pcb_s* dest) {*
+
+*}*
+
+*void do_sys_yieldto() {*
+
+*}*
+
+In sched.h : 
+
+*/*************** type declaration *****************/*
+
+*struct pcb_s {*
+
+*};*
+
+### 5.2
+
+*struct pcb_s {*
+
+*    uint32_t* regs;*
+
+*};*
+
+*void sys_yieldto(struct pcb_s* dest) {*
+
+*    *
+
+*    __asm("mov r0, %0" : : "r"(SYSCALL_SCHED_NUMBER) : "r0", "r1");*
+
+*    __asm("mov r1, %0" : : "r"(dest) : "r0", "r1");*
+
+*    //Interruption Call*
+
+*    __asm("SWI 0");*
+
+*}*
+
+*void do_sys_yieldto() {*
+
+*    *
+
+*    for(int i = 0; i < sizeof((current_process->regs)); i++) {*
+
+*   	 (current_process->regs)[i] = *(regs + i);    *
+
+*    }*
+
+*    current_process = (struct pcb_s*) *(regs + 1);  *
+
+*}*
+
+### 5.3
+
+*void sched_init() {*
+
+*    current_process = &kmain_process;*
+
+*}*
+
+### 5.4
+
+*// initialize p1 and p2*
+
+*    *(p1->regs + 14) = (uint32_t) &user_process_1;*
+
+*    *(p2->regs + 14) = (uint32_t) &user_process_2;*
+
+### 5.5
 
 
