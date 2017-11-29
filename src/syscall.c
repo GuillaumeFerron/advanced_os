@@ -51,13 +51,13 @@ void sys_settime(uint64_t date_ms) {
 
 void do_sys_settime() {
 	//Gets the MSB of the date
-	uint64_t date_ms = *(regs + 1);
+	uint64_t date_ms = *(regs_user + 1);
 	
 	//Put the bits as MSB of date_ms
 	date_ms <<= 32;
 	
 	//Add the LSB
-	date_ms += *(regs + 2);
+	date_ms += *(regs_user + 2);
 
 	set_date_ms(date_ms);
 }
@@ -93,8 +93,8 @@ void do_sys_gettime() {
 	uint32_t date_lsb = date_ms;
 	
 	//Backing up each two parts of the 64 bit long in the registers. We chose r0 and r1 of the USER stack
-	*(regs) = date_msb;
-	*(regs+1) = date_lsb;
+	*(regs_user) = date_msb;
+	*(regs_user+1) = date_lsb;
 }
 
 
@@ -104,22 +104,22 @@ void __attribute__((naked)) swi_handler(void) {
 	__asm("stmfd sp!, {r0-r12, lr}");
 
 	//Backs up the registers to access the values later on
-	__asm("mov %0, sp" : "=r"(regs) : : "sp");
+	__asm("mov %0, sp" : "=r"(regs_user) : : "sp");
 
 	//Handling of syscall mode
-	if(*regs == 1) {
+	if(*regs_user == 1) {
 		do_sys_reboot();	
 	}
-	else if(*regs == 2) {
+	else if(*regs_user == 2) {
 		do_sys_nop();	
 	}
-	else if(*regs == 3) {
+	else if(*regs_user == 3) {
 		do_sys_settime();
 	}
-	else if(*regs == 4) {
+	else if(*regs_user == 4) {
 		do_sys_gettime();
 	}
-	else if(*regs == 5) {
+	else if(*regs_user == 5) {
 		do_sys_yieldto();	
 	}
 	else {

@@ -26,12 +26,12 @@ void sys_yieldto(struct pcb_s* dest) {
 
 void do_sys_yieldto() {
 	
-	for(int i = 0; i < PCB_REGISTERS_LENGTH; i++) {	//regs have 4 bytes long cells
-		current_process->regs_process[i] = *(regs + i);	
+	for(int i = 0; i < PCB_REGISTERS_LENGTH; i++) {
+		current_process->regs_process[i] = *(regs_user + i);	
 	}
 
-	current_process->lr_process = *(regs + 14);
+	current_process->lr_process = *(regs_user + 14);
 
-	current_process = (struct pcb_s*) *(regs + 1);
+	current_process = (struct pcb_s*) *(regs_user + 1);
 	
 }

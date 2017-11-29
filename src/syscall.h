@@ -4,7 +4,7 @@
 #include <inttypes.h>
 
 //Back up of registers
-uint32_t* regs;
+uint32_t* regs_user;
 
 //System call modes
 #define SYSCALL_REBOOT_NUMBER 1
