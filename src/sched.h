@@ -4,9 +4,12 @@
 #include <stdint.h>
 #include <inttypes.h>
 
+#define PCB_REGISTERS_LENGTH 13
+
 /*************** type declaration *****************/
 struct pcb_s {
-	uint32_t regs[14];
+	uint32_t regs_process[PCB_REGISTERS_LENGTH];
+	uint32_t lr_process;
 };
 
 /*************** Functions declaration *****************/
