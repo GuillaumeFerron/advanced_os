@@ -107,19 +107,19 @@ void __attribute__((naked)) swi_handler(void) {
 	__asm("mov %0, sp" : "=r"(regs_user) : : "sp");
 
 	//Handling of syscall mode
-	if(*regs_user == 1) {
+	if(*regs_user == SYSCALL_REBOOT_NUMBER) {
 		do_sys_reboot();	
 	}
-	else if(*regs_user == 2) {
+	else if(*regs_user == SYSCALL_NOP_NUMBER) {
 		do_sys_nop();	
 	}
-	else if(*regs_user == 3) {
+	else if(*regs_user == SYSCALL_SETTIME_NUMBER) {
 		do_sys_settime();
 	}
-	else if(*regs_user == 4) {
+	else if(*regs_user == SYSCALL_GETTIME_NUMBER) {
 		do_sys_gettime();
 	}
-	else if(*regs_user == 5) {
+	else if(*regs_user == SYSCALL_SCHED_NUMBER) {
 		do_sys_yieldto();	
 	}
 	else {
