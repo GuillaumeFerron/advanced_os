@@ -5,12 +5,6 @@
 #include "./hw.h"
 #include "./sched.h"
 
-//System call modes
-int SYSCALL_REBOOT_NUMBER = 1;
-int SYSCALL_NOP_NUMBER = 2;
-int SYSCALL_SETTIME_NUMBER = 3;
-int SYSCALL_GETTIME_NUMBER = 4;
-
 
 /*************** REBOOT ***************/
 

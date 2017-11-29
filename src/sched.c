@@ -1,9 +1,6 @@
 #include "./sched.h"
 #include "./syscall.h"
 
-//System call modes
-int SYSCALL_SCHED_NUMBER = 5;
-
 //Executed process
 struct pcb_s *current_process;
 struct pcb_s kmain_process;

@@ -6,6 +6,12 @@
 //Back up of registers
 uint32_t* regs;
 
+//System call modes
+#define SYSCALL_REBOOT_NUMBER 1
+#define SYSCALL_NOP_NUMBER 2
+#define SYSCALL_SETTIME_NUMBER 3
+#define SYSCALL_GETTIME_NUMBER 4
+
 /*************** Functions declaration *****************/
 
 void __attribute__((naked)) swi_handler(void);

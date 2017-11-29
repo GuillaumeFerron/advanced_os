@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 
+#define SYSCALL_SCHED_NUMBER 5
 #define PCB_REGISTERS_LENGTH 13
 
 /*************** type declaration *****************/
