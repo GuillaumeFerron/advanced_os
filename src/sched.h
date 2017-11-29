@@ -10,7 +10,8 @@
 /*************** type declaration *****************/
 struct pcb_s {
 	uint32_t regs_process[PCB_REGISTERS_LENGTH];
-	uint32_t lr_process;
+	uint32_t lr_user;
+	uint32_t lr_svc;
 };
 
 /*************** Functions declaration *****************/

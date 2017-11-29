@@ -30,8 +30,14 @@ void do_sys_yieldto() {
 		current_process->regs_process[i] = *(regs_user + i);	
 	}
 
-	current_process->lr_process = *(regs_user + 14);
+	current_process->lr_svc = *(regs_user + 14);
 
 	current_process = (struct pcb_s*) *(regs_user + 1);
+
+	for(int i = 0; i < PCB_REGISTERS_LENGTH; i++) {
+		*(regs_user + i) = current_process->regs_process[i];	
+	}
+
+	*(regs_user + 13) = current_process->lr_user;
 	
 }
