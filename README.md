@@ -482,17 +482,23 @@ In sched.h :
 
 ### 5.2
 
-*struct pcb_s {*
+*/*************** INITIALIZATION ***************/*
 
-*    uint32_t* regs;*
+*void sched_init() {*
 
-*};*
+*    current_process = &kmain_process;*
+
+*}*
+
+*/*************** SCHED ***************/*
 
 *void sys_yieldto(struct pcb_s* dest) {*
 
 *    *
 
 *    __asm("mov r0, %0" : : "r"(SYSCALL_SCHED_NUMBER) : "r0", "r1");*
+
+*    //Stores the pcb address in r1*
 
 *    __asm("mov r1, %0" : : "r"(dest) : "r0", "r1");*
 
@@ -506,13 +512,35 @@ In sched.h :
 
 *    *
 
-*    for(int i = 0; i < sizeof((current_process->regs)); i++) {*
+*    //Backs up the current process stack*
 
-*   	 (current_process->regs)[i] = *(regs + i);    *
+*    for(int i = 0; i < PCB_REGISTERS_LENGTH; i++) {*
+
+*   	 current_process->regs_process[i] = *(regs_user + i);    *
 
 *    }*
 
-*    current_process = (struct pcb_s*) *(regs + 1);  *
+*    //stores the value of the lr which is the svc one, since lr is the same register as in user and svc mode*
+
+*    current_process->lr_svc = *(regs_user + 14);*
+
+*    //Gives current process the dest structure*
+
+*    current_process = (struct pcb_s*) *(regs_user + 1);*
+
+*    //Context switch*
+
+*    for(int i = 0; i < PCB_REGISTERS_LENGTH; i++) {*
+
+*   	 *(regs_user + i) = current_process->regs_process[i];    *
+
+*    }*
+
+*    //Makes sur it stores in regs_user the right lr to go to user_process_X*
+
+*    *(regs_user + 13) = current_process->lr_user;*
+
+*    *
 
 *}*
 
@@ -528,10 +556,90 @@ In sched.h :
 
 *// initialize p1 and p2*
 
-*    *(p1->regs + 14) = (uint32_t) &user_process_1;*
+*p1->lr_user = (uint32_t) &user_process_1;*
 
-*    *(p2->regs + 14) = (uint32_t) &user_process_2;*
+*p2->lr_user = (uint32_t) &user_process_2;*
 
-### 5.5
+### 5.6
+
+*void do_sys_yieldto() {*
+
+*    *
+
+*    for(int i = 0; i < PCB_REGISTERS_LENGTH; i++) {*
+
+*   	 current_process->regs_process[i] = *(regs_user + i);    *
+
+*    }*
+
+*    current_process->lr_svc = *(regs_user + 14);*
+
+*    current_process = (struct pcb_s*) *(regs_user + 1);*
+
+*    for(int i = 0; i < PCB_REGISTERS_LENGTH; i++) {*
+
+*   	 *(regs_user + i) = current_process->regs_process[i];    *
+
+*    }*
+
+*    *(regs_user + 13) = current_process->lr_user;*
+
+*    *
+
+*}*
+
+### 5.8
+
+It stores v1 and v2 in the user execution stack in r3, hence the values can’t be properly updated as there are concurrent access to the registers it is stored in.
+
+### 5.9
+
+*struct pcb_s {*
+
+*    uint32_t regs_process[PCB_REGISTERS_LENGTH];*
+
+*    uint32_t lr_user;*
+
+*    uint32_t lr_svc;*
+
+*    uint32_t* sp_user;*
+
+*};*
+
+*struct pcb_s* create_process(func_t entry) {*
+
+*    struct pcb_s* allocated_pointer;*
+
+*    allocated_pointer = (struct pcb_s*) kAlloc(sizeof(struct pcb_s));*
+
+*    allocated_pointer->sp_user = (uint32_t*) kAlloc(STACK_SIZE);*
+
+*    allocated_pointer->lr_user = (uint32_t) entry;*
+
+*    *
+
+*    return allocated_pointer;*
+
+*}*
+
+### 5.10
+
+*void sched_init() {*
+
+*    kheap_init();*
+
+*    current_process = &kmain_process;*
+
+*}*
+
+### 5.11
+
+To the return value of the kalloc : *allocated_pointer->sp_user = (uint32_t) kAlloc(STACK_SIZE);*
+
+### 5.12
+
+store : *current_process->sp_user = regs_user;*
+
+load : *regs_user = current_process->sp_user;*
 
 
