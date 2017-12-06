@@ -4,7 +4,8 @@
 #include <stdint.h>
 #include <inttypes.h>
 
-#define SYSCALL_SCHED_NUMBER 5
+#define SYSCALL_YIELDTO_NUMBER 5
+#define SYSCALL_YIELD_NUMBER 6
 #define PCB_REGISTERS_LENGTH 13
 #define STACK_SIZE 1250
 

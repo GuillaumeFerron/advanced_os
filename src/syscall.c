@@ -119,8 +119,11 @@ void __attribute__((naked)) swi_handler(void) {
 	else if(*regs_user == SYSCALL_GETTIME_NUMBER) {
 		do_sys_gettime();
 	}
-	else if(*regs_user == SYSCALL_SCHED_NUMBER) {
+	else if(*regs_user == SYSCALL_YIELDTO_NUMBER) {
 		do_sys_yieldto();	
+	}
+	else if(*regs_user == SYSCALL_YIELD_NUMBER) {
+		do_sys_yield();	
 	}
 	else {
 		PANIC();		

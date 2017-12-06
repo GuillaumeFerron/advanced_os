@@ -16,11 +16,12 @@ void sched_init() {
 }
 
 
-/*************** SCHED ***************/
+
+/*************** YIELDTO ***************/
 
 void sys_yieldto(struct pcb_s* dest) {
 	
-	__asm("mov r0, %0" : : "r"(SYSCALL_SCHED_NUMBER) : "r0", "r1");
+	__asm("mov r0, %0" : : "r"(SYSCALL_YIELDTO_NUMBER) : "r0", "r1");
 
 	//Stores the pcb address in r1
 	__asm("mov r1, %0" : : "r"(dest) : "r0", "r1");
