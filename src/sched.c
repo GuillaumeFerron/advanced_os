@@ -135,3 +135,20 @@ void elect() {
 		elect();
 	}
 }
+
+
+/*************** EXIT ***************/
+
+void sys_exit(int status) {
+	__asm("mov r0, %0" : : "r"(SYSCALL_EXIT_NUMBER) : "r0", "r1");
+
+	//Stores the exit status in r1
+	__asm("mov r1, %0" : : "r"(status) : "r0", "r1");
+
+	//Interruption Call
+	__asm("SWI 0");
+}
+
+void do_sys_exit() {
+
+}

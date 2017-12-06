@@ -6,6 +6,7 @@
 
 #define SYSCALL_YIELDTO_NUMBER 5
 #define SYSCALL_YIELD_NUMBER 6
+#define SYSCALL_EXIT_NUMBER 7
 #define PCB_REGISTERS_LENGTH 13
 #define STACK_SIZE 1250
 
@@ -31,5 +32,8 @@ void do_sys_yieldto();
 void sys_yield();
 void do_sys_yield();
 void elect();
+
+void sys_exit(int status);
+void do_sys_exit();
 
 #endif

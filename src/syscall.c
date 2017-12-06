@@ -125,6 +125,9 @@ void __attribute__((naked)) swi_handler(void) {
 	else if(*regs_user == SYSCALL_YIELD_NUMBER) {
 		do_sys_yield();	
 	}
+	else if(*regs_user == SYSCALL_EXIT_NUMBER) {
+		do_sys_exit();	
+	}
 	else {
 		PANIC();		
 	}
