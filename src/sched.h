@@ -8,6 +8,10 @@
 #define PCB_REGISTERS_LENGTH 13
 #define STACK_SIZE 1250
 
+/** STATUS **/
+#define TERMINATED 2
+#define RUNNING 1
+
 /*************** type declaration *****************/
 struct pcb_s {
 	uint32_t regs_process[PCB_REGISTERS_LENGTH];
@@ -16,6 +20,8 @@ struct pcb_s {
 	uint32_t* sp_user;
 	struct pcb_s *next;
 	struct pcb_s *previous;
+	int state;
+	int return_code;
 };
 
 typedef int (func_t) (void);
@@ -31,7 +37,7 @@ void sys_yield();
 void do_sys_yield();
 void elect();
 
-void sys_exit(int status);
+int sys_exit();
 void do_sys_exit();
 
 #endif

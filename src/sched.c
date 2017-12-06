@@ -12,7 +12,8 @@ struct pcb_s *linked_list;
 
 void sched_init() {
 	kheap_init();
-	
+	kmain_process.state = RUNNING;
+
 	current_process = &kmain_process;
 	linked_list = &kmain_process;
 }
@@ -24,6 +25,7 @@ void create_process(func_t entry) {
 	allocated_pcb = (struct pcb_s*) kAlloc(sizeof(struct pcb_s));
 	allocated_pcb->sp_user = (uint32_t*) (kAlloc(STACK_SIZE) + STACK_SIZE); //SP is decreasing, so we need to point at the top of the memory
 	allocated_pcb->lr_svc = (uint32_t) entry;
+	allocated_pcb->state = RUNNING;
 	
 	/** Insert new struct in the linked list **/
 	allocated_pcb->previous = linked_list;
@@ -126,29 +128,49 @@ void do_sys_yield(){
 }
 
 void elect() {
-	if(current_process && current_process->next) {
-		current_process = current_process->next;
+	if(current_process->state == RUNNING) {
+		if(current_process && current_process->next) {
+			current_process = current_process->next;
+		}
+		else {
+			/** Get the last added process points to the first added one **/
+			current_process->next = kmain_process.next;
+			elect();
+		}
 	}
-	else {
-		/** Get the last added process points to the first added one **/
-		current_process->next = kmain_process.next;
-		elect();
+	
+	if(current_process->state == TERMINATED) {
+		/** Remap linked list **/
+		current_process->previous->next = current_process->next;
+		current_process->next->previous = current_process->previous;
+		struct pcb_s* next_process = current_process->next;
+
+		/** Free the sp slots **/
+		kFree((uint8_t *) current_process->sp_user, STACK_SIZE);
+		/** Free the pcb struct slots **/
+		kFree((uint8_t *) current_process, sizeof(struct pcb_s));
+
+		/** Change context **/
+		current_process = next_process;
 	}
 }
 
 
 /*************** EXIT ***************/
 
-void sys_exit(int status) {
+int sys_exit(int status) {
 	__asm("mov r0, %0" : : "r"(SYSCALL_EXIT_NUMBER) : "r0", "r1");
 
-	//Stores the exit status in r1
+	//Stores the status in r1
 	__asm("mov r1, %0" : : "r"(status) : "r0", "r1");
 
 	//Interruption Call
 	__asm("SWI 0");
+
+	return status;
 }
 
 void do_sys_exit() {
-
+	current_process->state = TERMINATED;
+	__asm("mov %0, r1" : "=r"(current_process->state) : : "r1");
 }

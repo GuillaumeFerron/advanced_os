@@ -8,10 +8,11 @@
 
 void user_process() {
 	int v=0;
-	for(;;){
+	while(v<5) {
 		v++;
 		sys_yield();
 	}
+	sys_exit(999);
 }
 
 void kmain( void ) {
