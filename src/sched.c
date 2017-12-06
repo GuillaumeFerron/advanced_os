@@ -129,4 +129,9 @@ void elect() {
 	if(current_process && current_process->next) {
 		current_process = current_process->next;
 	}
+	else {
+		/** Get the last added process points to the first added one **/
+		current_process->next = kmain_process.next;
+		elect();
+	}
 }
