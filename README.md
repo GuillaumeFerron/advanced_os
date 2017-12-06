@@ -566,15 +566,37 @@ In sched.h :
 
 *    *
 
+*    /*************** Save context *****************/*
+
+*    /* -- general registers -- */*
+
 *    for(int i = 0; i < PCB_REGISTERS_LENGTH; i++) {*
 
 *   	 current_process->regs_process[i] = *(regs_user + i);    *
 
 *    }*
 
-*    current_process->lr_svc = *(regs_user + 14);*
+*    //stores the value of the lr which is the svc one, since lr is the same register as in user and svc mode*
+
+*    /* -- Program Counter (PC), held by lr_svc -- */*
+
+*    current_process->lr_svc = *(regs_user + 13);*
+
+*    /* -- lr_user and sp_user are inreachable from SVC mode => switch to SYSTEM mode -- */*
+
+*    __asm("cps 0x1f"); // switch CPU to SYSTEM mode (system and user modes have the same sp and lr registers)*
+
+*    __asm("mov %0, sp" : "=r"(current_process->sp_user) : : "sp", "lr");*
+
+*    __asm("mov %0, lr" : "=r"(current_process->lr_user) : : "sp", "lr");*
+
+*    __asm("cps 0x13"); // switch CPU to SVC mode*
+
+*    /*************** Change context *****************/*
 
 *    current_process = (struct pcb_s*) *(regs_user + 1);*
+
+*    /*************** Restore other context *****************/*
 
 *    for(int i = 0; i < PCB_REGISTERS_LENGTH; i++) {*
 
@@ -582,9 +604,19 @@ In sched.h :
 
 *    }*
 
-*    *(regs_user + 13) = current_process->lr_user;*
+*    //Makes sure it stores in regs_user the right lr to continue execution*
 
-*    *
+*    *(regs_user + 13) = current_process->lr_svc;*
+
+*    /* -- lr_user and sp_user are inreachable from SVC mode => switch to SYSTEM mode -- */*
+
+*    __asm("cps 0x1f"); // switch CPU to SYSTEM mode (system and user modes have the same sp and lr registers)*
+
+*    __asm("mov sp, %0" : : "r"(current_process->sp_user) : "sp", "lr");*
+
+*    __asm("mov lr, %0" : : "r"(current_process->lr_user) : "sp", "lr");*
+
+*    __asm("cps 0x13"); // switch CPU to SVC mode*
 
 *}*
 
@@ -614,7 +646,7 @@ It stores v1 and v2 in the user execution stack in r3, hence the values can’t 
 
 *    allocated_pointer->sp_user = (uint32_t*) kAlloc(STACK_SIZE);*
 
-*    allocated_pointer->lr_user = (uint32_t) entry;*
+*    allocated_pointer->lr_svc = (uint32_t) entry;*
 
 *    *
 
@@ -642,4 +674,223 @@ store : *current_process->sp_user = regs_user;*
 
 load : *regs_user = current_process->sp_user;*
 
+### 5.15
+
+It is not allowed to avoid blocking by process, in case a process chooses to loop
+
+To let the processor handles priorities itself, and optimize the executions
+
+## Chapter 6
+
+### 6.1
+
+*struct pcb_s {*
+
+*    uint32_t regs_process[PCB_REGISTERS_LENGTH];*
+
+*    uint32_t lr_user;*
+
+*    uint32_t lr_svc;*
+
+*    uint32_t* sp_user;*
+
+*    struct pcb_s* next;*
+
+*    struct pcb_s* previous;*
+
+*};*
+
+We also add a pointer to the last struct pcb_s added in the linked list
+
+### 6.2
+
+**Modify create_process**
+
+*void create_process(func_t entry) {*
+
+*    struct pcb_s* allocated_pcb;*
+
+*    allocated_pcb = (struct pcb_s*) kAlloc(sizeof(struct pcb_s));*
+
+*    allocated_pcb->sp_user = (uint32_t*) (kAlloc(STACK_SIZE) + STACK_SIZE); //SP is decreasing, so we need to point at the top of the memory*
+
+*    allocated_pcb->lr_svc = (uint32_t) entry;*
+
+*    *
+
+*    /** Insert new struct in the linked list **/*
+
+*    allocated_pcb->previous = linked_list;*
+
+*    linked_list->next = allocated_pcb;*
+
+*    linked_list = allocated_pcb;*
+
+*}*
+
+**Implement elect**
+
+*void elect() {*
+
+*    if(current_process && current_process->next) {*
+
+*   	 current_process = current_process->next;*
+
+*    }*
+
+*    else {*
+
+*   	 /** Get the last added process points to the first added one **/*
+
+*   	 current_process->next = kmain_process.next;*
+
+*   	 elect();*
+
+*    }*
+
+*}*
+
+What’s important is that the last process doesn’t have any next process, hence issue when running the programm. What is odne here is that if the process has no next process, then the next one is the one following the kmain_process.
+
+**System call sys_yield**
+
+*/*************** YIELD ***************/*
+
+*void sys_yield() {*
+
+*    __asm("mov r0, %0" : : "r"(SYSCALL_YIELD_NUMBER) : "r0", "r1");*
+
+*    //Interruption Call*
+
+*    __asm("SWI 0");*
+
+*}*
+
+*void do_sys_yield(){*
+
+*    /*************** Save context *****************/*
+
+*    /* -- general registers -- */*
+
+*    for(int i = 0; i < PCB_REGISTERS_LENGTH; i++) {*
+
+*   	 current_process->regs_process[i] = *(regs_user + i);    *
+
+*    }*
+
+*    //stores the value of the lr which is the svc one, since lr is the same register as in user and svc mode*
+
+*    /* -- Program Counter (PC), held by lr_svc -- */*
+
+*    current_process->lr_svc = *(regs_user + 13);*
+
+*    /* -- lr_user and sp_user are inreachable from SVC mode => switch to SYSTEM mode -- */*
+
+*    __asm("cps 0x1f"); // switch CPU to SYSTEM mode (system and user modes have the same sp and lr registers)*
+
+*    __asm("mov %0, sp" : "=r"(current_process->sp_user) : : "sp", "lr");*
+
+*    __asm("mov %0, lr" : "=r"(current_process->lr_user) : : "sp", "lr");*
+
+*    __asm("cps 0x13"); // switch CPU to SVC mode*
+
+*    /*************** Change context *****************/*
+
+*    elect();*
+
+*    /*************** Restore other context *****************/*
+
+*    for(int i = 0; i < PCB_REGISTERS_LENGTH; i++) {*
+
+*   	 *(regs_user + i) = current_process->regs_process[i];    *
+
+*    }*
+
+*    //Makes sure it stores in regs_user the right lr to continue execution*
+
+*    *(regs_user + 13) = current_process->lr_svc;*
+
+*    /* -- lr_user and sp_user are inreachable from SVC mode => switch to SYSTEM mode -- */*
+
+*    __asm("cps 0x1f"); // switch CPU to SYSTEM mode (system and user modes have the same sp and lr registers)*
+
+*    __asm("mov sp, %0" : : "r"(current_process->sp_user) : "sp", "lr");*
+
+*    __asm("mov lr, %0" : : "r"(current_process->lr_user) : "sp", "lr");*
+
+*    __asm("cps 0x13"); // switch CPU to SVC mode*
+
+*}*
+
+The important parts are that the sys_yeild function doesn’t load a destination process in a register anymore, since the current process will know what process to go to. 
+
+Furthermore, the code is pretty much the same as for the yeild to, but the destination process is now specified by the elect function
+
+**Chain kmain_process**
+
+*void sched_init() {*
+
+*    kheap_init();*
+
+*    *
+
+*    current_process = &kmain_process;*
+
+*    linked_list = &kmain_process;*
+
+*}*
+
+In order to have the first process added right in the linked list, we need to initialise the linked list to kmain_process
+
+### 6.5
+
+We can use the *kFree* method from kheap.c, using the pointer to the memory slot to free, and the size to free. To remove the process from the linked list, we can remap it such that :
+
+If we have the processes in the list st A → B → C, and we want to remove B, we do :
+
+	A.next = C;
+
+	C.previous = A;
+
+	Free B.sp_user memory slots;
+
+	Free B memory slots;
+
+	Change context to C;
+
+By nature, this is pretty effective since the number of processes doesn’t matter in the linked list, the number of operations will be the same for 3 or 10000 processes in the list.
+
+### 6.6
+
+We choose to implement the first one :
+
+**Mark the process as TERMINATED and handle its termination in function elect(). In this case, you have**
+
+**to add the notion of state in the PCBs, and modify elect() in order to remove a potential TERMINATED**
+
+**process met when walking through the linked list;**
+
+*int sys_exit(int status) {*
+
+*    __asm("mov r0, %0" : : "r"(SYSCALL_EXIT_NUMBER) : "r0", "r1");*
+
+*    //Stores the status in r1*
+
+*    __asm("mov r1, %0" : : "r"(status) : "r0", "r1");*
+
+*    //Interruption Call*
+
+*    __asm("SWI 0");*
+
+*    return status;*
+
+*}*
+
+*void do_sys_exit() {*
+
+*    current_process->state = TERMINATED;*
+
+*    __asm("mov %0, r1" : "=r"(current_process->state) : : "r1");*
+
+*}*
 
