@@ -15,16 +15,21 @@ struct pcb_s {
 	uint32_t lr_user;
 	uint32_t lr_svc;
 	uint32_t* sp_user;
+	struct pcb_s *next;
+	struct pcb_s *previous;
 };
 
 typedef int (func_t) (void);
 
 /*************** Functions declaration *****************/
 void sched_init();
+void create_process(func_t entry);
 
 void sys_yieldto(struct pcb_s* dest);
 void do_sys_yieldto();
 
-struct pcb_s* create_process(func_t entry);
+void sys_yield();
+void do_sys_yield();
+void elect();
 
 #endif
