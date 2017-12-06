@@ -4,9 +4,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 
-#define SYSCALL_YIELDTO_NUMBER 5
-#define SYSCALL_YIELD_NUMBER 6
-#define SYSCALL_EXIT_NUMBER 7
+/** METAPARAMETERS **/
 #define PCB_REGISTERS_LENGTH 13
 #define STACK_SIZE 1250
 

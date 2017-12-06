@@ -11,6 +11,9 @@ uint32_t* regs_user;
 #define SYSCALL_NOP_NUMBER 2
 #define SYSCALL_SETTIME_NUMBER 3
 #define SYSCALL_GETTIME_NUMBER 4
+#define SYSCALL_YIELDTO_NUMBER 5
+#define SYSCALL_YIELD_NUMBER 6
+#define SYSCALL_EXIT_NUMBER 7
 
 /*************** Functions declaration *****************/
 
