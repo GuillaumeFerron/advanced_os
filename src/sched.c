@@ -1,5 +1,6 @@
 #include "./sched.h"
 #include "./syscall.h"
+#include "./kheap.h"
 
 //Executed process
 struct pcb_s *current_process;
@@ -9,6 +10,8 @@ struct pcb_s kmain_process;
 /*************** INITIALIZATION ***************/
 
 void sched_init() {
+	kheap_init();
+
 	current_process = &kmain_process;
 }
 
@@ -28,23 +31,48 @@ void sys_yieldto(struct pcb_s* dest) {
 
 void do_sys_yieldto() {
 	
-	//Backs up the current process stack
+	/*************** Save context *****************/
+	/* -- general registers -- */
 	for(int i = 0; i < PCB_REGISTERS_LENGTH; i++) {
 		current_process->regs_process[i] = *(regs_user + i);	
 	}
 
 	//stores the value of the lr which is the svc one, since lr is the same register as in user and svc mode
-	current_process->lr_svc = *(regs_user + 14);
+	/* -- Program Counter (PC), held by lr_svc -- */
+	current_process->lr_svc = *(regs_user + 13);
+	/* -- lr_user and sp_user are inreachable from SVC mode => switch to SYSTEM mode -- */
+	__asm("cps 0x1f"); // switch CPU to SYSTEM mode (system and user modes have the same sp and lr registers)
+	__asm("mov %0, sp" : "=r"(current_process->sp_user) : : "sp", "lr");
+	__asm("mov %0, lr" : "=r"(current_process->lr_user) : : "sp", "lr");
+	__asm("cps 0x13"); // switch CPU to SVC mode
 
-	//Gives current process the dest structure
+	/*************** Change context *****************/
 	current_process = (struct pcb_s*) *(regs_user + 1);
 
-	//Context switch
+	/*************** Restore other context *****************/
 	for(int i = 0; i < PCB_REGISTERS_LENGTH; i++) {
 		*(regs_user + i) = current_process->regs_process[i];	
 	}
 
-	//Makes sur it stores in regs_user the right lr to go to user_process_X
-	*(regs_user + 13) = current_process->lr_user;
+	//Makes sure it stores in regs_user the right lr to continue execution
+	*(regs_user + 13) = current_process->lr_svc;
+
+	/* -- lr_user and sp_user are inreachable from SVC mode => switch to SYSTEM mode -- */
+	__asm("cps 0x1f"); // switch CPU to SYSTEM mode (system and user modes have the same sp and lr registers)
+	__asm("mov sp, %0" : : "r"(current_process->sp_user) : "sp", "lr");
+	__asm("mov lr, %0" : : "r"(current_process->lr_user) : "sp", "lr");
+	__asm("cps 0x13"); // switch CPU to SVC mode
+
+}
+
+struct pcb_s* create_process(func_t entry) {
+
+	struct pcb_s* allocated_pcb;
+
+	allocated_pcb = (struct pcb_s*) kAlloc(sizeof(struct pcb_s));
+	allocated_pcb->sp_user = (uint32_t*) (kAlloc(STACK_SIZE) + STACK_SIZE); //SP is decreasing, so we need to point at the top of the memory
+	allocated_pcb->lr_svc = (uint32_t) entry;
 	
+	return allocated_pcb;
+
 }
